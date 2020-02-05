@@ -10,9 +10,12 @@ import {
   ActivityIndicator
 } from "react-native-paper";
 
-import Story from "./components/Story";
+import StoryCard from "./components/StoryCard";
+import StoryDetails from "./pages/StoryDetails";
 
 import { ref } from "./firebase";
+
+import { Router, Route, Link } from "./router";
 
 const { height, width } = Dimensions.get("window");
 
@@ -32,47 +35,59 @@ export default function App() {
   const [values, loading, error] = useListVals(storiesRef);
 
   const loadMoreStories = useCallback(() => {
-    console.log(numberOfStories);
     setNumberOfStories(numberOfStories + 30);
   }, [numberOfStories]);
 
   return (
     <PaperProvider theme={theme}>
-      <View style={styles.container}>
-        <Appbar.Header style={{ width }}>
-          <Appbar.Content title="Hacker News" />
-        </Appbar.Header>
-        <View
-          style={{ flex: 1, width, paddingHorizontal: 16, paddingVertical: 8 }}
-        >
-          {loading && values.length === 0 && (
+      <Router>
+        <Route exact path="/">
+          <View style={styles.container}>
+            <Appbar.Header style={{ width }} dark>
+              <Appbar.Content title="Hacker News" />
+            </Appbar.Header>
             <View
               style={{
-                flexDirection: "row",
-                justifyContent: "center",
-                alignItems: "center",
-                paddingVertical: 16
+                flex: 1,
+                width,
+                paddingVertical: 8,
+                maxWidth: 1280
               }}
             >
-              <ActivityIndicator style={{ marginRight: 16 }} />
-              <Text>Loading top stories...</Text>
+              {loading && values.length === 0 && (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    paddingVertical: 16
+                  }}
+                >
+                  <ActivityIndicator style={{ marginRight: 16 }} />
+                  <Text>Loading top stories...</Text>
+                </View>
+              )}
+              {error && <Text>Error loading top stories</Text>}
+              {!loading && !error && (
+                <>
+                  <FlatList
+                    data={values}
+                    renderItem={({ item }) => <StoryCard id={item} />}
+                    keyExtractor={(_, index) => index.toString()}
+                  />
+                  {/* <Button
+                    style={{ marginVertical: 16 }}
+                    onPress={loadMoreStories}
+                  >
+                    Load more
+                  </Button> */}
+                </>
+              )}
             </View>
-          )}
-          {error && <Text>Error loading top stories</Text>}
-          {!loading && !error && (
-            <>
-              <FlatList
-                data={values}
-                renderItem={({ item }) => <Story id={item} />}
-                keyExtractor={(_, index) => index}
-              />
-              <Button style={{ marginVertical: 16 }} onPress={loadMoreStories}>
-                Load more
-              </Button>
-            </>
-          )}
-        </View>
-      </View>
+          </View>
+        </Route>
+        <Route path="/story/:id" component={StoryDetails} />
+      </Router>
     </PaperProvider>
   );
 }
