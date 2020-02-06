@@ -1,26 +1,19 @@
-import React from "react";
-import { View, Platform, TouchableOpacity } from "react-native";
-import { useObject } from "react-firebase-hooks/database";
-import {
-  Avatar,
-  Button,
-  Text,
-  Card,
-  Title,
-  Paragraph
-} from "react-native-paper";
 import { MaterialIcons } from "@expo/vector-icons";
-import moment from "moment";
 import { Linking } from "expo";
-
+import moment from "moment";
+import React from "react";
+import { useObject } from "react-firebase-hooks/database";
+import { Platform, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Card, Paragraph, Text, Title } from "react-native-paper";
+import { useHistory } from "react-router-dom";
 import Url from "url-parse";
 
-import { Router, Route, Link } from "../router";
-
 import { ref } from "../firebase";
+import { Link } from "../router";
 
-const Story = ({ id }) => {
+const Story = ({ id, style }) => {
   const [value, loading, error] = useObject(ref(`item/${id}`));
+  const history = useHistory();
 
   if (loading || error) {
     return null;
@@ -28,42 +21,33 @@ const Story = ({ id }) => {
 
   const val = value.val();
 
+  const storyUrl = val.url ? ` (${Url(val.url).hostname})` : "";
+  const storyTitle = `${val.title}${storyUrl}`;
+  const storyPostedAt = moment.unix(val.time).fromNow();
+
   return (
-    <Card style={{ flex: 1, paddingVertical: 8, shadowOpacity: 0 }}>
+    <Card
+      style={[{ shadowOpacity: 0 }, style]}
+      onPress={() => history.push(`/story/${id}`)}
+    >
       <Card.Content>
-        <View style={{ flex: 1, flexDirection: "row" }}>
-          <View
-            style={{
-              alignItems: "center",
-              justifyContent: "center",
-              paddingTop: 0,
-              paddingBottom: 8,
-              paddingHorizontal: 8,
-              borderRadius: 4,
-              borderWidth: 2,
-              borderColor: "#f1f0f3",
-              marginRight: 16
-            }}
-          >
+        <View style={{ flexDirection: "row" }}>
+          <View style={styles.upvoteContainer}>
             <MaterialIcons
               name="arrow-drop-up"
               size={32}
               color="#767676"
-              style={{ width: 32 }}
+              style={styles.upvoteIcon}
             />
-            <Text style={{ color: "#767676", flexWrap: "wrap" }}>
-              {val.score}
-            </Text>
+            <Text style={styles.upvoteText}>{val.score}</Text>
           </View>
-          <View style={{ flex: 1 }}>
+          <View style={styles.storyInfoContainer}>
             {val.url === undefined ? (
               <Link
                 to={`/story/${id}`}
                 style={Platform.OS === "web" && { textDecoration: "none" }}
               >
-                <Title>{`${val.title}${
-                  val.url ? ` (${Url(val.url).hostname})` : ""
-                }`}</Title>
+                <Title>{storyTitle}</Title>
               </Link>
             ) : (
               <TouchableOpacity
@@ -75,21 +59,12 @@ const Story = ({ id }) => {
                   }
                 }}
               >
-                <Title>{`${val.title}${
-                  val.url ? ` (${Url(val.url).hostname})` : ""
-                }`}</Title>
+                <Title>{storyTitle}</Title>
               </TouchableOpacity>
             )}
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Link
-                to={`/story/${id}`}
-                style={Platform.OS === "web" && { textDecoration: "none" }}
-              >
-                <Paragraph>{`${val.descendants || 0} comments`}</Paragraph>
-              </Link>
-              <Paragraph>{` • ${val.by} • ${moment
-                .unix(val.time)
-                .fromNow()}`}</Paragraph>
+            <View style={styles.storyMetaContainer}>
+              <Paragraph>{`${val.descendants || 0} comments`}</Paragraph>
+              <Paragraph>{` • ${val.by} • ${storyPostedAt}`}</Paragraph>
             </View>
           </View>
         </View>
@@ -97,5 +72,33 @@ const Story = ({ id }) => {
     </Card>
   );
 };
+
+const styles = StyleSheet.create({
+  upvoteContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 0,
+    paddingBottom: 8,
+    paddingHorizontal: 8,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: "#f1f0f3",
+    marginRight: 16
+  },
+  upvoteIcon: {
+    width: 32
+  },
+  upvoteText: {
+    color: "#767676",
+    flexWrap: "wrap"
+  },
+  storyInfoContainer: {
+    flex: 1
+  },
+  storyMetaContainer: {
+    flexDirection: "row",
+    alignItems: "center"
+  }
+});
 
 export default Story;

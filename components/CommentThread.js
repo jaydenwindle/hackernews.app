@@ -1,14 +1,19 @@
-import React from "react";
-import { View, FlatList } from "react-native";
-import { useObject } from "react-firebase-hooks/database";
-import { Text } from "react-native-paper";
 import moment from "moment";
+import React from "react";
+import { useObject } from "react-firebase-hooks/database";
+import { FlatList, View } from "react-native";
+import { Text } from "react-native-paper";
 import HTML from "react-native-render-html";
 
+import LoadingMessage from "./LoadingMessage";
 import { ref } from "../firebase";
 
 const CommentThread = ({ id, depth }) => {
   const [value, loading, error] = useObject(ref(`item/${id}`).limitToFirst(30));
+
+  if (loading) {
+    return <LoadingMessage message="Loading comments..." visible={true} />;
+  }
 
   if (loading || error) {
     return null;
@@ -24,6 +29,7 @@ const CommentThread = ({ id, depth }) => {
     <View
       style={[
         {
+          flex: 1,
           margin: 8
         },
         depth > 0 && {
@@ -35,9 +41,9 @@ const CommentThread = ({ id, depth }) => {
       ]}
     >
       {depth > 0 && (
-        <Text style={{ marginBottom: 16, color: "#767676" }}>{`${
-          val.by
-        } • ${moment.unix(val.time).fromNow()}`}</Text>
+        <Text style={{ marginBottom: 16, color: "#767676" }}>
+          {`${val.by} • ${moment.unix(val.time).fromNow()}`}
+        </Text>
       )}
       {val.text && <HTML html={val.text} />}
       {val.kids !== undefined && (
